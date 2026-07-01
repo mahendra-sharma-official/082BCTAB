@@ -20,9 +20,10 @@ export default function App() {
   const [userRole, setUserRole] = useState<UserRole>("student");
   const [currentTab, setCurrentTab] = useState<string>("home");
   const [loading, setLoading] = useState<boolean>(true);
-  
+
   const [verificationMsg, setVerificationMsg] = useState<string>("");
   const [sendingVerification, setSendingVerification] = useState<boolean>(false);
+  const [checkingVerification, setCheckingVerification] = useState<boolean>(false);
   const [isVerified, setIsVerified] = useState<boolean>(false);
 
   const handleResendVerification = async () => {
@@ -31,7 +32,7 @@ export default function App() {
     setVerificationMsg("");
     try {
       await sendEmailVerification(auth.currentUser);
-      setVerificationMsg("Success! A new email verification link has been sent to your official address.");
+      setVerificationMsg("Link sent. Check your inbox and spam folder.");
     } catch (err: any) {
       console.error("Resend error:", err);
       setVerificationMsg("Failed to resend: " + (err.message || "An unexpected error occurred."));
@@ -43,28 +44,39 @@ export default function App() {
   const handleCheckVerification = async () => {
     if (!auth.currentUser) return;
     setVerificationMsg("");
+    setCheckingVerification(true);
     try {
       await auth.currentUser.reload();
       const updatedUser = auth.currentUser;
       setUser(updatedUser);
       setIsVerified(updatedUser.emailVerified);
-      if (updatedUser.emailVerified) {
-        setVerificationMsg("Success! Your email address has been verified. Welcome to BCT Class Portal!");
-      } else {
-        setVerificationMsg("We checked, but your email is still not verified. Please verify using the link sent to your inbox.");
+      if (!updatedUser.emailVerified) {
+        setVerificationMsg("Still not verified. Click the link in your inbox first.");
       }
     } catch (err: any) {
       console.error("Check error:", err);
       setVerificationMsg("Failed to refresh: " + (err.message || "An unexpected error occurred."));
+    } finally {
+      setCheckingVerification(false);
     }
   };
+
+  // Auto-recheck the moment they switch back to this tab — covers the
+  // common case where they clicked the email link in a different tab and
+  // just came back, without needing to press "I've verified" manually.
+  useEffect(() => {
+    if (!user || isVerified) return;
+    const onFocus = () => handleCheckVerification();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [user, isVerified]);
 
   const fetchProfileAndRole = async (uid: string, email: string) => {
     try {
       // 1. Fetch Profile
       const profileRef = doc(db, "users", uid);
       const profileSnap = await getDoc(profileRef);
-      
+
       let profileData: UserProfile;
       if (profileSnap.exists()) {
         profileData = profileSnap.data() as UserProfile;
@@ -88,7 +100,7 @@ export default function App() {
       // 2. Fetch Role
       const roleRef = doc(db, "roles", uid);
       const roleSnap = await getDoc(roleRef);
-      
+
       let role: UserRole = "student";
       if (roleSnap.exists()) {
         role = roleSnap.data().role as UserRole;
@@ -111,11 +123,25 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setLoading(true);
+      setLoading(true); // stays true until we're 100% sure — blocks all rendering below
       if (currentUser) {
-        setUser(currentUser);
-        setIsVerified(currentUser.emailVerified);
-        await fetchProfileAndRole(currentUser.uid, currentUser.email || "");
+        // Reload first so emailVerified reflects the current server state,
+        // not a cached value from an older session/token (this matters
+        // most right after a page refresh, where Firebase restores a
+        // persisted session before revalidating it).
+        try {
+          await currentUser.reload();
+        } catch (err) {
+          console.error("Failed to reload user:", err);
+        }
+        const freshUser = auth.currentUser;
+
+        setUser(freshUser);
+        setIsVerified(freshUser?.emailVerified ?? false);
+
+        if (freshUser?.emailVerified) {
+          await fetchProfileAndRole(freshUser.uid, freshUser.email || "");
+        }
       } else {
         setUser(null);
         setUserProfile(null);
@@ -123,7 +149,7 @@ export default function App() {
         setCurrentTab("home");
         setIsVerified(false);
       }
-      setLoading(false);
+      setLoading(false); // only now does the component render past the spinner
     });
 
     return () => unsubscribe();
@@ -163,6 +189,52 @@ export default function App() {
     return <AuthScreen onSuccess={() => {}} />;
   }
 
+  // NEW: this is the actual gate. Nothing below this — Navbar, tabs,
+  // profile data — renders until Firebase confirms the email is verified.
+  // Previously the app rendered fully with just a dismissible banner,
+  // which meant an unverified account could already use everything.
+  if (!isVerified) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 font-serif text-center">
+        <p className="text-xs uppercase tracking-widest text-[#8A8A8A] font-sans mb-3">
+          {user.email}
+        </p>
+        <h1 className="text-2xl font-bold text-[#111111] mb-6">
+          Verify your email
+        </h1>
+
+        <button
+          onClick={handleResendVerification}
+          disabled={sendingVerification}
+          className="bg-[#111111] text-[#F4C430] px-6 py-3 text-xs font-sans font-bold uppercase tracking-widest hover:bg-[#F4C430] hover:text-[#111111] transition-all disabled:opacity-50"
+        >
+          {sendingVerification ? "Sending..." : "Send verification link"}
+        </button>
+
+        {verificationMsg && (
+          <p className="text-[10px] text-[#8A8A8A] font-sans uppercase tracking-widest mt-4 max-w-xs">
+            {verificationMsg}
+          </p>
+        )}
+
+        <button
+          onClick={handleCheckVerification}
+          disabled={checkingVerification}
+          className="mt-6 text-[10px] text-[#8A8A8A] font-sans uppercase font-bold tracking-widest hover:text-[#111111] hover:underline disabled:opacity-50"
+        >
+          {checkingVerification ? "Checking…" : "I've verified — continue"}
+        </button>
+
+        <button
+          onClick={handleSignOut}
+          className="mt-3 text-[10px] text-[#8A8A8A] font-sans uppercase font-bold tracking-widest hover:text-[#111111] hover:underline"
+        >
+          Log out
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar
@@ -173,44 +245,6 @@ export default function App() {
         onSignOut={handleSignOut}
       />
 
-      {user && !isVerified && (
-        <div className="bg-[#FAF9F6] border-b border-orange-200 text-[#111111] py-3.5 px-6 font-serif text-xs">
-          <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex items-start gap-2.5">
-              <span className="text-orange-500 font-bold font-sans text-xs shrink-0 mt-0.5">⚠️ ATTN:</span>
-              <div>
-                <p className="font-bold font-sans uppercase tracking-wider text-[10px] text-orange-600 mb-0.5">
-                  Email Address Not Verified
-                </p>
-                <p className="text-gray-600 leading-normal">
-                  Your email <strong className="font-sans font-semibold">{user.email}</strong> is not verified yet. Please check your inbox (and spam folder) for the verification link.
-                </p>
-                {verificationMsg && (
-                  <p className="mt-2 text-xs font-sans uppercase tracking-wide font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 inline-block">
-                    {verificationMsg}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 font-sans shrink-0">
-              <button
-                onClick={handleResendVerification}
-                disabled={sendingVerification}
-                className="bg-[#111111] text-[#F4C430] hover:bg-[#F4C430] hover:text-[#111111] text-[10px] font-bold uppercase tracking-widest px-4 py-2 transition-all rounded-[1px] disabled:opacity-50 border border-[#111111]"
-              >
-                {sendingVerification ? "Sending..." : "Resend Link"}
-              </button>
-              <button
-                onClick={handleCheckVerification}
-                className="bg-white border border-[#E5E5E5] hover:border-[#111111] text-[#111111] text-[10px] font-bold uppercase tracking-widest px-4 py-2 transition-all rounded-[1px]"
-              >
-                Check Status
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <main className="flex-1 pb-16 bg-white">
         {currentTab === "home" && (
           <HomeView
@@ -219,11 +253,11 @@ export default function App() {
             onOpenAuth={() => {}}
           />
         )}
-        
+
         {currentTab === "about" && (
           <AboutView />
         )}
-        
+
         {currentTab === "profiles" && (
           <ProfilesView
             currentUserUid={user.uid}
@@ -232,7 +266,7 @@ export default function App() {
             onRefreshProfile={refreshProfile}
           />
         )}
-        
+
         {currentTab === "events" && (
           <EventsView
             currentUserUid={user.uid}
@@ -240,13 +274,13 @@ export default function App() {
             currentUserRole={userRole}
           />
         )}
-        
+
         {currentTab === "explore" && (
           <ExploreView
             currentUserUid={user.uid}
           />
         )}
-        
+
         {currentTab === "admin" && (
           <AdminView
             currentUserUid={user.uid}

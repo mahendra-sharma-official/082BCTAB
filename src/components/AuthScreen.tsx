@@ -7,11 +7,12 @@ import {
   signOut,
   sendPasswordResetEmail,
   sendEmailVerification,
+  User,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 import { parsePcampusEmail, validatePcampusEmail } from "../utils/helpers";
-import { Key, Mail, User, ShieldAlert, Sparkles, HelpCircle } from "lucide-react";
+import { Key, Mail, User as UserIcon, ShieldAlert, Sparkles, HelpCircle, MailCheck } from "lucide-react";
 
 interface AuthScreenProps {
   onSuccess: () => void;
@@ -27,12 +28,16 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // NEW: tracks a signed-out-but-not-yet-verified user so we can offer
+  // a "resend verification email" action without asking them to log in again.
+  const [pendingUser, setPendingUser] = useState<User | null>(null);
+
   const validateAccess = async (userEmail: string): Promise<boolean> => {
     // 1. Direct Pattern Validation
     if (validatePcampusEmail(userEmail)) {
       return true;
     }
-    
+
     // 2. Exception Email list check
     try {
       const docRef = doc(db, "exceptionEmails", userEmail.toLowerCase());
@@ -67,42 +72,38 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
 
         try {
           await sendEmailVerification(user);
-          console.log("Verification email sent.");
         } catch (verifErr) {
           console.error("Failed to send verification email:", verifErr);
         }
 
-        // Parse default parameters from email if available
-        const parsed = parsePcampusEmail(targetEmail);
-        const studentName = name.trim() || parsed?.name || "BCT Student";
-        const rollNumber = parsed?.rollNumber || "";
-        const batchYear = parsed?.batchYear || "";
+        // IMPORTANT: we deliberately do NOT create the "users" or "roles"
+        // Firestore documents here anymore. Doing so at signup meant every
+        // unverified account showed up immediately in the Profiles roster
+        // for everyone else, since ProfilesView fetches the whole "users"
+        // collection with no verification filter.
+        //
+        // Instead, those documents get created the first time this person
+        // logs in AFTER verifying (see fetchProfileAndRole in App.tsx,
+        // which only runs once isVerified is true). Until then, this
+        // account simply doesn't exist anywhere visible.
 
-        // 1. Create Profile document
-        await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          name: studentName,
-          email: targetEmail,
-          skills: [],
-          socials: {},
-          rollNumber,
-          batchYear,
-          photoURL: `https://api.dicebear.com/7.x/identicon/svg?seed=${user.uid}`,
-          createdAt: new Date(),
-        });
-
-        // 2. Create Role document
-        const role = targetEmail === "082bct013.apil@pcampus.edu.np" ? "admin" : "student";
-        await setDoc(doc(db, "roles", user.uid), {
-          uid: user.uid,
-          email: targetEmail,
-          role,
-          grantedBy: "system",
-          grantedAt: new Date(),
-        });
-
+        // IMPORTANT: we do NOT sign out here. Firebase already signed this
+        // account in the instant it was created — App.tsx's onAuthStateChanged
+        // listener is the single gate that decides what to show a signed-in-
+        // but-unverified user (its own blank "Verify your email" screen).
+        // Signing out here used to race against that: App.tsx would show its
+        // verify screen for a split second, then this signOut() would flip
+        // it back to the login form. Just let onSuccess() hand off — App.tsx
+        // takes it from here.
+        onSuccess();
+        return;
       } else {
-        // Log in
+        // Log in. Verification is no longer checked/enforced here —
+        // App.tsx's onAuthStateChanged listener is the single gate that
+        // decides portal vs. blank verify screen. Checking it here too
+        // caused a race: this signOut() would fire a split second AFTER
+        // App.tsx had already rendered the portal for the briefly-valid
+        // session, causing the flash you saw.
         await signInWithEmailAndPassword(auth, targetEmail, password);
       }
       onSuccess();
@@ -119,6 +120,23 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
         errMsg = "Email/Password sign-in is not enabled in Firebase. Please enable 'Email/Password' in the Firebase Auth console.";
       }
       setError(errMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NEW: resend the verification link for whoever the last blocked
+  // sign-in/sign-up attempt belonged to.
+  const handleResendVerification = async () => {
+    if (!pendingUser) return;
+    setLoading(true);
+    setError("");
+    try {
+      await sendEmailVerification(pendingUser);
+      setSuccessMsg("Verification email resent. Check your inbox and spam folder.");
+    } catch (err: any) {
+      console.error("Resend verification error:", err);
+      setError("Couldn't resend the email right now. Try again in a minute.");
     } finally {
       setLoading(false);
     }
@@ -181,11 +199,18 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
         );
       }
 
-      // Check if profile exists; if not, initialize
+      // NOTE: verification is intentionally NOT checked here anymore —
+      // App.tsx's onAuthStateChanged listener is the single gate.
+      // Google accounts are verified by Google already in nearly all
+      // cases; App.tsx will show the blank verify screen for the rare
+      // edge case where it isn't, with no race/flash.
+
+      // Check if profile exists; if not, initialize — but only for
+      // verified accounts, for the same reason as the register flow above.
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
-      if (!userSnap.exists()) {
+      if (!userSnap.exists() && user.emailVerified) {
         const parsed = parsePcampusEmail(userEmail);
         const studentName = user.displayName || parsed?.name || "BCT Student";
         const rollNumber = parsed?.rollNumber || "";
@@ -231,7 +256,7 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
   return (
     <div className="min-h-screen bg-[#FDFDFD] flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md border border-[#E5E5E5] hover:border-[#111111] p-8 bg-white transition-all duration-300">
-        
+
         {/* Brand Banner */}
         <div className="text-center mb-8 border-b border-[#E5E5E5] pb-6">
           <div className="inline-block bg-[#111111] text-[#F4C430] text-[10px] font-sans font-extrabold uppercase tracking-[0.2em] px-3 py-1.5 mb-3">
@@ -248,13 +273,38 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
         {error && (
           <div className="border border-red-500 bg-red-50 text-red-700 p-4 mb-6 text-xs font-sans uppercase tracking-wide leading-relaxed flex items-start gap-2">
             <ShieldAlert className="w-5 h-5 flex-shrink-0 text-red-600 mt-0.5" />
-            <p className="font-bold">{error}</p>
+            <div className="flex-1">
+              <p className="font-bold">{error}</p>
+              {/* NEW: resend button appears whenever we have a blocked, unverified user on hand */}
+              {pendingUser && (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={loading}
+                  className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest underline hover:no-underline disabled:opacity-50"
+                >
+                  <MailCheck className="w-3 h-3" />
+                  Resend verification email
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         {successMsg && (
           <div className="border border-green-500 bg-green-50 text-green-800 p-4 mb-6 text-xs font-sans uppercase tracking-wide leading-relaxed">
             <p className="font-bold">{successMsg}</p>
+            {pendingUser && (
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={loading}
+                className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest underline hover:no-underline disabled:opacity-50"
+              >
+                <MailCheck className="w-3 h-3" />
+                Resend verification email
+              </button>
+            )}
           </div>
         )}
 
@@ -313,7 +363,7 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
                     Full Name
                   </label>
                   <div className="relative font-sans">
-                    <User className="absolute left-3 top-3 w-4 h-4 text-[#8A8A8A]" />
+                    <UserIcon className="absolute left-3 top-3 w-4 h-4 text-[#8A8A8A]" />
                     <input
                       type="text"
                       required
@@ -430,6 +480,7 @@ export default function AuthScreen({ onSuccess }: AuthScreenProps) {
                   setIsRegister(!isRegister);
                   setError("");
                   setSuccessMsg("");
+                  setPendingUser(null);
                 }}
                 className="text-[10px] text-[#8A8A8A] font-sans uppercase font-bold tracking-widest hover:text-[#111111] transition-all hover:underline"
               >
