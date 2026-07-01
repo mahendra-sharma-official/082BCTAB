@@ -25,7 +25,7 @@ export default function ProfilesView({
   const [removingUid, setRemovingUid] = useState<string | null>(null);
 
   // Layout Controls
-  const [viewMode, setViewMode] = useState<"gang" | "my-profile">("gang");
+  const [viewMode, setViewMode] = useState<"clan" | "my-profile">("clan");
 
   // Profile Edit fields
   const [editName, setEditName] = useState("");
@@ -221,7 +221,7 @@ export default function ProfilesView({
       await setDoc(userRef, updatedProfile, { merge: true });
       onRefreshProfile();
       loadProfiles();
-      setViewMode("gang");
+      setViewMode("clan");
     } catch (err) {
       console.error("Error saving profile details:", err);
     }
@@ -238,7 +238,7 @@ export default function ProfilesView({
       const projectRef = doc(db, "projects", projId);
       await setDoc(projectRef, {
         ownerUid: currentUserUid,
-        ownerName: currentUserProfile?.name || "Gang Member",
+        ownerName: currentUserProfile?.name || "Clan Member",
         ownerEmail: currentUserProfile?.email || "",
         title: newProjTitle.trim(),
         description: newProjDesc.trim(),
@@ -379,7 +379,7 @@ export default function ProfilesView({
                 <div className="border border-neutral-200 rounded p-4 bg-neutral-50/60 flex flex-col h-44">
                   <div className="flex items-center gap-1.5 border-b border-neutral-200 pb-1.5 mb-2 flex-shrink-0">
                     <Users className="w-3.5 h-3.5 text-[#111111]" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-[#111111]">Attach Collaborators from the Gang</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-[#111111]">Attach Collaborators from the Clan</span>
                   </div>
                   <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
                     {profiles
@@ -439,11 +439,11 @@ export default function ProfilesView({
       <div className="mb-10 flex flex-wrap gap-4 items-center justify-between border-b border-[#111111] pb-4">
         <div>
           <span className="block font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A8A8A] mb-2">PORTAL NETWORKS</span>
-          <h2 className="text-3xl font-serif font-bold text-[#111111]">{viewMode === "gang" ? "The Gang" : "My Base Center"}</h2>
-          <p className="text-sm italic text-[#8A8A8A]">{viewMode === "gang" ? "Connecting every active node in our circle. View profiles, experience custom sites, or start text lines." : "Refine your system profiles, structural badges, projects, and active code sandboxes."}</p>
+          <h2 className="text-3xl font-serif font-bold text-[#111111]">{viewMode === "clan" ? "The Clan" : "My Base Center"}</h2>
+          <p className="text-sm italic text-[#8A8A8A]">{viewMode === "clan" ? "Connecting every active node in our circle. View profiles, experience custom sites, or start text lines." : "Refine your system profiles, structural badges, projects, and active code sandboxes."}</p>
         </div>
         <div className="flex items-center gap-3 font-sans">
-          <button onClick={() => { setViewMode("gang"); setActiveSandbox(null); }} className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-[2px] ${viewMode === "gang" && !activeSandbox ? "bg-[#111111] text-white" : "border border-[#E5E5E5] text-[#111111] hover:border-[#111111]"}`}>The Gang</button>
+          <button onClick={() => { setViewMode("clan"); setActiveSandbox(null); }} className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-[2px] ${viewMode === "clan" && !activeSandbox ? "bg-[#111111] text-white" : "border border-[#E5E5E5] text-[#111111] hover:border-[#111111]"}`}>The Clan</button>
           <button onClick={() => setViewMode("my-profile")} className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-[2px] ${viewMode === "my-profile" ? "bg-[#111111] text-white" : "border border-[#E5E5E5] text-[#111111] hover:border-[#111111]"}`}>My Profile</button>
         </div>
       </div>
@@ -475,7 +475,7 @@ export default function ProfilesView({
             <div className="flex flex-col h-full border border-[#E5E5E5] rounded bg-white overflow-hidden shadow-inner">
               <div className="bg-neutral-100 border-b border-[#E5E5E5] px-4 py-2 flex items-center gap-2">
                 <div className="flex gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block"></span><span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block"></span><span className="w-2.5 h-2.5 rounded-full bg-green-400 inline-block"></span></div>
-                <div className="bg-white border border-neutral-200 text-[10px] font-mono rounded px-3 py-0.5 text-neutral-500 flex-1 truncate">https://gang.portal/showcase/${activeSandbox.uid}</div>
+                <div className="bg-white border border-neutral-200 text-[10px] font-mono rounded px-3 py-0.5 text-neutral-500 flex-1 truncate">https://clan.portal/showcase/${activeSandbox.uid}</div>
               </div>
               <iframe title="Sandbox App Render Console Window" srcDoc={getCombinedSrcDoc()} sandbox="allow-scripts" className="w-full flex-1 bg-white" />
             </div>
@@ -483,8 +483,8 @@ export default function ProfilesView({
         </div>
       )}
 
-      {/* VIEW: GANG DIRECTORY CARDS GRID */}
-      {viewMode === "gang" && (
+      {/* VIEW: CLAN DIRECTORY CARDS GRID */}
+      {viewMode === "clan" && (
         <>
           {loading ? (
             <div className="text-center font-sans text-xs uppercase tracking-widest py-12 text-[#8A8A8A]">Assembling network directory...</div>

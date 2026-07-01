@@ -100,7 +100,7 @@ export default function HomeView({ onNavigate, isAuthenticated, onOpenAuth }: Ho
                   <span className="font-sans text-[9px] font-bold border border-black px-1 text-neutral-800">01</span>
                   <ArrowRight className="w-3 h-3 text-neutral-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
                 </div>
-                <h4 className="text-xs font-bold uppercase tracking-tight text-neutral-900 group-hover:underline">The Gang Profiles</h4>
+                <h4 className="text-xs font-bold uppercase tracking-tight text-neutral-900 group-hover:underline">The Clan Profiles</h4>
               </div>
 
               <div onClick={() => handleNavigate("explore")} className="group cursor-pointer border border-[#E5E5E5] p-4 bg-white hover:border-[#111111] hover:shadow-[3px_3px_0px_0px_rgba(17,17,17,1)] transition-all rounded-[1px]">
