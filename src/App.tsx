@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./lib/firebase";
 import { UserProfile, UserRole } from "./types";
 import { parsePcampusEmail } from "./utils/helpers";
+import { Analytics } from "@vercel/analytics/react";
 
 import AuthScreen from "./components/AuthScreen";
 import Navbar from "./components/Navbar";
@@ -181,12 +182,18 @@ export default function App() {
         <div className="text-xs text-[#8A8A8A] uppercase tracking-wider font-bold mt-4 animate-pulse">
           Establishing Connection to Portal...
         </div>
+        <Analytics />
       </div>
     );
   }
 
   if (!user) {
-    return <AuthScreen onSuccess={() => {}} />;
+    return (
+      <>
+        <AuthScreen onSuccess={() => {}} />
+        <Analytics />
+      </>
+    );
   }
 
   // NEW: this is the actual gate. Nothing below this — Navbar, tabs,
@@ -231,6 +238,7 @@ export default function App() {
         >
           Log out
         </button>
+        <Analytics />
       </div>
     );
   }
@@ -302,6 +310,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      <Analytics />
     </div>
   );
 }
