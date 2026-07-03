@@ -1,7 +1,6 @@
 # Class Portal
 
 A digital workspace and portal designed specifically for the BCT (Computer Engineering) batch of students. Featuring profiles with sandboxed custom HTML/CSS showcases, a timeline-based project directory, upcoming events board, real-time 1:1 student chat, and a Hacker News-style project explore feed.
-
 ---
 
 ## 🎨 Design System & Philosophy
