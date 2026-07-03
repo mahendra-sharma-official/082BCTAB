@@ -1,0 +1,50 @@
+name: Enforce Advanced PR Structure
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  validate-format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Checkboxes and Log Syntax
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prBody = context.payload.pull_request.body || "";
+
+            // 1. Check if at least one checkbox is checked
+            const hasCheckedBox = prBody.includes("- [x]");
+
+            // 2. Check for the @ LOG string
+            const hasLogHeader = /@\s*LOG\s*:/i.test(prBody);
+
+            // 3. Check for at least one Action block (# Action :)
+            const hasActionHeader = /#\s*(Created|Added|Changed|Modified|Restructured|Deleted|Removed|Fixed|Completed|Finished|Miscellaneous|.+)\s*:/i.test(prBody);
+
+            // 4. Check for file bullet points
+            const hasFileBullets = prBody.includes("- ");
+
+            // 5. Ensure they didn't leave default bracket placeholders
+            const hasPlaceholders = prBody.includes("[Your Name]") || prBody.includes("[Action Key Word]") || prBody.includes("[File/Component Name]");
+
+            if (!hasCheckedBox || !hasLogHeader || !hasActionHeader || !hasFileBullets || hasPlaceholders) {
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: `❌ **PR Validation Failed!** Your description must use our strict logging format.
+
+            **Requirements:**
+            1. Check at least one **Contribution Type** checkbox \`- [x]\`.
+            2. Include your signature line: \`@ LOG : Your Name\`
+            3. Use valid Action headers starting with \`#\`, followed by a bullet list of files.
+            4. Replace all default placeholder text template fields.
+
+            Please fix your PR description to match the layout in \`CONTRIBUTING.md\`.`
+              });
+
+              core.setFailed("PR description failed syntax validation rules.");
+            }
