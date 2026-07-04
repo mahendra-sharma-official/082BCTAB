@@ -1,10 +1,11 @@
 name: Enforce and Inject PR Meta
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, synchronize]
 jobs:
   validate-and-stamp:
     runs-on: ubuntu-latest
+    # Explicitly grant the GITHUB_TOKEN write access to PRs and checks
     permissions:
       pull-requests: write
       issues: write
@@ -17,13 +18,23 @@ jobs:
           script: |
             const prBody = context.payload.pull_request.body || "";
 
+            // 1. At least one Contribution Type checkbox checked: - [x]
             const hasCheckedBox = /-\s*\[x\]/i.test(prBody);
+
+            // 2. @ LOG : `...` line present with actual content
             const hasLogHeader = /@\s*LOG\s*:\s*`[^`]+`/i.test(prBody);
+
+            // 3. At least one Action block header: `# Created` :  etc.
             const hasActionHeader = /`#\s*(Created|Added|Changed|Modified|Restructured|Deleted|Removed|Fixed|Completed|Finished|Miscellaneous|[A-Za-z][A-Za-z ]*)`\s*:/i.test(prBody);
+
+            // 4. At least one file bullet: - `File/Component` : description
             const hasFileBullets = /-\s*`[^`]+`\s*:\s*\S+/.test(prBody);
+
+            // 5. Author / Authored Date footer present
             const hasAuthorLine = /Author:\s*\*\*[^*]+\*\*/i.test(prBody);
             const hasDateLine = /Authored Date:\s*\*\*[^*]+\*\*/i.test(prBody);
 
+            // 6. No leftover placeholder text
             const placeholderStrings = [
               "<Action Key Word>",
               "<File/Component Name>",
