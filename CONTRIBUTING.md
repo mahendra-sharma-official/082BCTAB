@@ -1,18 +1,40 @@
 # <u> Contribution Rules </u>
 
-This is a project specifically for the 082 - BCT of Pulchowk campus. Even Specifically for the students of class AB.
+Thank you for your interest in contributing! This project is specifically tailored for the **082 - BCT batch of Pulchowk Campus**, and even more specifically for the students of **Class A and B**. 
 
-So the first and foremost requirement to contirbute to this repo is to:
+To maintain the integrity of our project and ensure we grow together as a academic team, please adhere to the following rules.
 
-1. Be a member of the batch : 082BCT "A/B" (Pulchowk Campus, IOE)
-` Anyveone outside this batch is requested not to participate in the contributions as that would hamper
-the goal of us growing as a team. `
+---
 
-2. Follow the syntax / be as clear and descriptive of what is changed, how that amounts to a contribution
-and what issue did you solve. Follow the template given in the [pull_request_template.md](https://github.com/aliz-bhattarai-001/082BCTAB/blob/main/.github/pull_request_template.md)
+## 1. Eligibility Requirements
 
-If any of the checks fail, you will not be able to contribute at all. Thus copy that template and use it as needed.
+*   **Batch Restriction:** You **must** be a member of the batch **082BCT "A/B" (Pulchowk Campus, IOE)**.
+ > **Note:** Anyone outside this batch is requested not to participate in the contributions, as doing so would hamper our goal of growing together as a team.
 
-### For issue disclosure:
-Do mention the issue title with a link to the issue posted by using this format: 
-`In response to [Issue-13](link-to-issue)`
+---
+
+## 2. Pull Request Guidelines
+
+To ensure your contributions are reviewed and merged efficiently, please follow these guidelines:
+
+*   **Clarity:** Be as clear and descriptive as possible about what was changed, how it qualifies as a contribution, and what specific issue you solved.
+*   **Use the Template:** You **must** follow the pull request template. Copy the template provided here and use it as needed:
+    > [pull_request_template.md](https://github.com/aliz-bhattarai-001/082BCTAB/blob/main/.github/pull_request_template.md)
+
+> **Important:** If any of the template checks fail, your contribution will not be accepted.
+
+---
+
+## 3. Issue Disclosure & Referencing
+
+When addressing an issue, always mention the issue title and provide a direct link to it. Please use the following format in your PR description:
+
+`In response to [Issue-X](link-to-issue)`
+
+*(Replace `Issue-X` and `link-to-issue` with the actual issue number and URL, respectively).*
+
+Always make sure to add additional context explaining your fix or implementation below the reference link.
+
+---
+
+> **Note** : Do read these rules carefully before submitting your pull requests.
