@@ -25,16 +25,17 @@ Created, Added, Changed, Modified, Restructured, Deleted, Removed, Fixed, Comple
 - `<File/Component Name>` : What occurred here.
 
 Description :<br>
-&emsp;< Short description of this action block (Optional) >
+&emsp;Short description of this action block (Optional)
 
 <br>
 <!-- multiple such action keywords depends on whether or not the changes can be broken into multiple sub fragments.-->
+
 `# <Action Key Word>` :
 - `<File/Component Name>` : What occurred here.
 - `<File/Component Name>` : What occurred here.
 
 Description :<br>
-&emsp;< Short description of this action block (Optional) >
+&emsp;Short description of this action block (Optional)
 
 ---
 
