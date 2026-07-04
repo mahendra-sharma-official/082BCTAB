@@ -5,7 +5,6 @@ on:
 jobs:
   validate-and-stamp:
     runs-on: ubuntu-latest
-    # Explicitly grant the GITHUB_TOKEN write access to PRs and checks
     permissions:
       pull-requests: write
       issues: write
@@ -18,23 +17,13 @@ jobs:
           script: |
             const prBody = context.payload.pull_request.body || "";
 
-            // Must have at least one Contribution Type checkbox checked: - [x]
             const hasCheckedBox = /-\s*\[x\]/i.test(prBody);
-
-            // @ LOG : `...` line  must be present with actual content
             const hasLogHeader = /@\s*LOG\s*:\s*`[^`]+`/i.test(prBody);
-
-            // At least one Action block header must be present: eg-> `# Created` :  etc.
             const hasActionHeader = /`#\s*(Created|Added|Changed|Modified|Restructured|Deleted|Removed|Fixed|Completed|Finished|Miscellaneous|[A-Za-z][A-Za-z ]*)`\s*:/i.test(prBody);
-
-            // At least one file bullet: - `File/Component` : description required.
             const hasFileBullets = /-\s*`[^`]+`\s*:\s*\S+/.test(prBody);
-
-            // Author / Authored Date footer must be present
             const hasAuthorLine = /Author:\s*\*\*[^*]+\*\*/i.test(prBody);
             const hasDateLine = /Authored Date:\s*\*\*[^*]+\*\*/i.test(prBody);
 
-            //No leftover placeholder text (shouldn't just be the template text being left as leftover)
             const placeholderStrings = [
               "<Action Key Word>",
               "<File/Component Name>",
@@ -46,11 +35,22 @@ jobs:
 
             if (!hasCheckedBox || !hasLogHeader || !hasActionHeader || !hasFileBullets || !hasAuthorLine || !hasDateLine || hasPlaceholders) {
 
+              const commentBody = [
+                "❌ **PR Validation Failed!** Your description must use our strict logging format.",
+                "",
+                "**Requirements:**",
+                "1. Check at least one **Contribution Type** checkbox: `- [x]`",
+                "2. Include your log line in the form: @ LOG : with a backtick-wrapped message",
+                "3. Use valid Action headers like `# Created` : followed by backtick-wrapped file bullets.",
+                "4. Keep the `Author:` and `Authored Date:` footer lines intact.",
+                "5. Replace all default placeholder text fields."
+              ].join("\n");
+
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.payload.pull_request.number,
-                body: `❌ **PR Validation Failed!** Your description must use our strict logging format.\n\n**Requirements:**\n1. Check at least one **Contribution Type** checkbox \`- [x]\`.\n2. Include your log line: \`@ LOG : \\\`<message>\\\`\`\n3. Use valid Action headers like \`\` \`# Created\` : \`\` followed by backtick-wrapped file bullets.\n4. Keep the \`Author:\` and \`Authored Date:\` footer lines intact.\n5. Replace all default placeholder text fields.`
+                body: commentBody
               });
               core.setFailed("PR description failed structural validation rules.");
             }
@@ -64,13 +64,11 @@ jobs:
             const username = context.actor;
             const today = new Date().toISOString().split('T')[0];
 
-            // Replace whatever is between ** ** on the Author / Authored Date lines
-            // to add the username and current date
             let updatedBody = prBody
-              .replace(/(Author:\s*\*\*)[^*]*(\*\*)/i, `$1${username}$2`)
-              .replace(/(Authored Date:\s*\*\*)[^*]*(\*\*)/i, `$1${today}$2`);
+              .replace(/(Author:\s*\*\*)[^*]*(\*\*)/i, "$1" + username + "$2")
+              .replace(/(Authored Date:\s*\*\*)[^*]*(\*\*)/i, "$1" + today + "$2");
 
-            if (prBody !== updatedBody) {dify author line in pull request template
+            if (prBody !== updatedBody) {
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
