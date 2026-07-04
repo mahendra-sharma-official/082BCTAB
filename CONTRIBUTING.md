@@ -1,6 +1,6 @@
 # <u> Contribution Rules </u>
 
-Thank you for your interest in contributing! This project is specifically tailored for the **082 - BCT batch of Pulchowk Campus**, and even more specifically for the students of **Class A and B**. 
+Thank you for your interest in contributing! This project is specifically tailored for the **082 - BCT batch of Pulchowk Campus**, and even more specifically for the students of **Class AB**. 
 
 To maintain the integrity of our project and ensure we grow together as a academic team, please adhere to the following rules.
 
