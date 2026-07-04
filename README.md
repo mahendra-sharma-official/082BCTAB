@@ -15,6 +15,8 @@ A digital workspace and portal designed specifically for the BCT (Computer Engin
 - **Typography**: Uses `"Times New Roman", Times, serif` as the primary font for an authentic, structured look. Pair with minimal, clean sans-serif styles strictly for UI action labels.
 - **Rules**: Zero gradients. Flat panels, crisp 1px borders, and ultra-sharp layouts with corner radii kept strictly between `0px` and `4px`.
 
+
+
 ---
 
 ## 🔐 Authentication, Authorization, & Security
