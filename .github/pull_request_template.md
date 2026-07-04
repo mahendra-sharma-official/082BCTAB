@@ -39,5 +39,5 @@ Description :<br>
 
 ---
 
-Author: **your-name/username**
+Author: **your-name/username** <br>
 Authored Date: **Current-date**
