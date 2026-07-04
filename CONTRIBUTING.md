@@ -8,7 +8,7 @@ To maintain the integrity of our project and ensure we grow together as a academ
 
 ## 1. Eligibility Requirements
 
-*   **Batch Restriction:** You **must** be a member of the batch **082BCT "A/B" (Pulchowk Campus, IOE)**.
+*   **Batch Restriction:** You **must** be a member of the batch **082BCT "AB" (Pulchowk Campus, IOE)**.
  > **Note:** Anyone outside this batch is requested not to participate in the contributions, as doing so would hamper our goal of growing together as a team.
 
 ---
