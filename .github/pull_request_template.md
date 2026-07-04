@@ -15,20 +15,28 @@ MANDATORY ACTION KEYWORDS:
 Created, Added, Changed, Modified, Restructured, Deleted, Removed, Fixed, Completed, Finished, Miscellaneous, "Custom Keyword that is sensible"
 -->
 
-```
-@ LOG : [Your Name]
-# [Action Key Word] :
-- [File/Component Name] : What occurred here.
-- [File/Component Name] : What occurred here.
 
-Description:
-    [Short description of this action block (Optional)]
+@ LOG : `< A log message >`
 
-# [Action Key Word] :
-- [File/Component Name] : What occurred here.
+<br>
 
-Description:
-    [Short description of this action block (Optional)]
-```
+`# <Action Key Word>` :
+- `<File/Component Name>` : What occurred here.
+- `<File/Component Name>` : What occurred here.
+
+Description :<br>
+&emsp;< Short description of this action block (Optional) >
+
+<br>
+<!-- multiple such action keywords depends on whether or not the changes can be broken into multiple sub fragments.-->
+`# <Action Key Word>` :
+- `<File/Component Name>` : What occurred here.
+- `<File/Component Name>` : What occurred here.
+
+Description :<br>
+&emsp;< Short description of this action block (Optional) >
 
 ---
+
+Author: **your-name/username**
+Authored Date: **Current-date**
